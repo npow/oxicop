@@ -1,0 +1,24 @@
+# Build artifacts
+/target
+debug/
+*.pdb
+
+# Cargo
+Cargo.lock
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.*
+
+# Coverage
+*.profraw
+lcov.info
+tarpaulin-report.html
