@@ -372,12 +372,12 @@ impl Cop for IndentationWidth {
             let trimmed = line.trim();
             
             // Check for end/when/else/elsif/rescue/ensure - these dedent first
-            if trimmed.starts_with("end") || trimmed.starts_with("when ") || 
-               trimmed.starts_with("else") || trimmed.starts_with("elsif ") || 
-               trimmed.starts_with("rescue") || trimmed.starts_with("ensure") {
-                if expected_indent > 0 {
-                    expected_indent -= INDENT_WIDTH;
-                }
+            if (trimmed.starts_with("end") || trimmed.starts_with("when ") ||
+               trimmed.starts_with("else") || trimmed.starts_with("elsif ") ||
+               trimmed.starts_with("rescue") || trimmed.starts_with("ensure"))
+               && expected_indent > 0
+            {
+                expected_indent -= INDENT_WIDTH;
             }
             
             let actual_indent = Self::get_indentation_level(line);
@@ -399,10 +399,8 @@ impl Cop for IndentationWidth {
             let change = Self::expected_indent_change(line);
             if change > 0 {
                 expected_indent += INDENT_WIDTH;
-            } else if change < 0 {
-                if expected_indent >= INDENT_WIDTH {
-                    expected_indent -= INDENT_WIDTH;
-                }
+            } else if change < 0 && expected_indent >= INDENT_WIDTH {
+                expected_indent -= INDENT_WIDTH;
             }
         }
 
@@ -1083,7 +1081,7 @@ mod tests {
         let source = test_source("if x==5\n  foo\nend\n");
         let cop = SpaceAroundOperators;
         let offenses = cop.check(&source);
-        assert!(offenses.len() > 0);
+        assert!(!offenses.is_empty());
     }
 
     // ========================================================================

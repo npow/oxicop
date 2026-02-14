@@ -91,7 +91,7 @@ fn main() {
     let result = runner.run(&ruby_files);
 
     // Format and print output
-    let format = Format::from_str(&cli.format).unwrap_or(Format::Simple);
+    let format = cli.format.parse::<Format>().unwrap_or(Format::Simple);
     let formatter = create_formatter(format);
     let output = formatter.format(&result);
     print!("{}", output);
@@ -106,11 +106,7 @@ fn main() {
 fn list_cops(registry: &CopRegistry) {
     println!("Available cops:\n");
 
-    let mut cops: Vec<_> = registry
-        .cop_names()
-        .iter()
-        .map(|&name| name)
-        .collect();
+    let mut cops = registry.cop_names().to_vec();
     cops.sort();
 
     for cop_name in cops {
@@ -166,12 +162,10 @@ fn discover_ruby_files(paths: &[PathBuf]) -> Vec<PathBuf> {
             }
         } else if path.is_dir() {
             // Use WalkBuilder for efficient directory traversal
-            for entry in WalkBuilder::new(path).build() {
-                if let Ok(entry) = entry {
-                    let entry_path = entry.path();
-                    if entry_path.is_file() && is_ruby_file(entry_path) {
-                        ruby_files.push(entry_path.to_path_buf());
-                    }
+            for entry in WalkBuilder::new(path).build().flatten() {
+                let entry_path = entry.path();
+                if entry_path.is_file() && is_ruby_file(entry_path) {
+                    ruby_files.push(entry_path.to_path_buf());
                 }
             }
         }
@@ -204,7 +198,6 @@ mod tests {
     #[test]
     fn test_apply_only_filter() {
         let mut registry = CopRegistry::new();
-        let initial_count = registry.enabled_count();
 
         apply_only_filter(&mut registry, "Layout/TrailingWhitespace,Style/StringLiterals");
 

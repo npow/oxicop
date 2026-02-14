@@ -14,14 +14,15 @@ pub enum Format {
     Json,
 }
 
-impl Format {
-    /// Parses a format string into a Format enum.
-    pub fn from_str(s: &str) -> Option<Self> {
+impl std::str::FromStr for Format {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "simple" => Some(Format::Simple),
-            "compact" => Some(Format::Compact),
-            "json" => Some(Format::Json),
-            _ => None,
+            "simple" => Ok(Format::Simple),
+            "compact" => Ok(Format::Compact),
+            "json" => Ok(Format::Json),
+            _ => Err(format!("unknown format: {}", s)),
         }
     }
 }
@@ -210,11 +211,11 @@ mod tests {
 
     #[test]
     fn test_format_from_str() {
-        assert_eq!(Format::from_str("simple"), Some(Format::Simple));
-        assert_eq!(Format::from_str("compact"), Some(Format::Compact));
-        assert_eq!(Format::from_str("json"), Some(Format::Json));
-        assert_eq!(Format::from_str("SIMPLE"), Some(Format::Simple));
-        assert_eq!(Format::from_str("invalid"), None);
+        assert_eq!("simple".parse::<Format>(), Ok(Format::Simple));
+        assert_eq!("compact".parse::<Format>(), Ok(Format::Compact));
+        assert_eq!("json".parse::<Format>(), Ok(Format::Json));
+        assert_eq!("SIMPLE".parse::<Format>(), Ok(Format::Simple));
+        assert!("invalid".parse::<Format>().is_err());
     }
 
     #[test]

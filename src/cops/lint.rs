@@ -255,7 +255,7 @@ impl Cop for DuplicateMethods {
 
                 method_definitions
                     .entry(method_name.to_string())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push((line_number, column));
             }
         }

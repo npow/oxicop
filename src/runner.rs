@@ -92,37 +92,6 @@ impl Runner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cop::{Cop, Category, Severity};
-    use crate::offense::Location;
-
-    // A simple test cop that always reports one offense on line 1
-    struct TestCop;
-    impl Cop for TestCop {
-        fn name(&self) -> &str {
-            "Test/TestCop"
-        }
-        fn category(&self) -> Category {
-            Category::Lint
-        }
-        fn severity(&self) -> Severity {
-            Severity::Warning
-        }
-        fn description(&self) -> &str {
-            "Test cop"
-        }
-        fn check(&self, source: &SourceFile) -> Vec<Offense> {
-            if source.line_count() > 0 {
-                vec![Offense::new(
-                    self.name(),
-                    "Test offense",
-                    self.severity(),
-                    Location::new(1, 1, 4),
-                )]
-            } else {
-                Vec::new()
-            }
-        }
-    }
 
     #[test]
     fn test_check_file_with_offenses() {
