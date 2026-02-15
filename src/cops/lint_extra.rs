@@ -25,7 +25,7 @@ static BIGDECIMAL_NEW: Lazy<Regex> = Lazy::new(|| {
 });
 
 static BINARY_IDENTICAL_OPERANDS: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"\b([a-z_][a-z0-9_]*)\s*(==|!=|<|>|<=|>=|\|\||&&)\s*\1\b"#).unwrap()
+    Regex::new(r#"\b([a-z_][a-z0-9_]*)\s*(==|!=|<|>|<=|>=|\|\||&&)\s*([a-z_][a-z0-9_]*)\b"#).unwrap()
 });
 
 static BOOLEAN_SYMBOL: Lazy<Regex> = Lazy::new(|| {
@@ -37,7 +37,7 @@ static CONSTANT_DEFINITION_IN_BLOCK: Lazy<Regex> = Lazy::new(|| {
 });
 
 static DEPRECATED_CLASS_METHODS: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"\b(File\.exists\?|Dir\.exists\?)\b"#).unwrap()
+    Regex::new(r#"(File\.exists\?|Dir\.exists\?)"#).unwrap()
 });
 
 static DUPLICATE_HASH_KEY: Lazy<Regex> = Lazy::new(|| {
@@ -85,7 +85,7 @@ static RESCUE_EXCEPTION: Lazy<Regex> = Lazy::new(|| {
 });
 
 static SELF_ASSIGNMENT: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"\b([a-z_][a-z0-9_]*)\s*=\s*\1\b"#).unwrap()
+    Regex::new(r#"\b([a-z_][a-z0-9_]*)\s*=\s*([a-z_][a-z0-9_]*)\b"#).unwrap()
 });
 
 static SUPPRESSED_EXCEPTION: Lazy<Regex> = Lazy::new(|| {
@@ -256,18 +256,30 @@ impl Cop for AssignmentInCondition {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let pattern = Regex::new(r#"\b(if|unless|while|until)\s+.*=(?!=)"#).unwrap();
+        let pattern = Regex::new(r#"\b(if|unless|while|until)\s+.*="#).unwrap();
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
             if pattern.is_match(line) && !source.in_string_or_comment(line_number, 1) {
-                if let Some(pos) = line.find('=') {
-                    if pos > 0 && !line.chars().nth(pos + 1).map_or(false, |c| c == '=') {
-                        offenses.push(Offense::new(
-                            self.name(),
-                            "Assignment in condition - use comparison or wrap in parentheses.",
-                            self.severity(),
-                            Location::new(line_number, pos + 1, 1),
-                        ));
+                // Find all '=' signs and check if they're not part of ==, !=, <=, >=, =~
+                let chars: Vec<char> = line.chars().collect();
+                for (i, &ch) in chars.iter().enumerate() {
+                    if ch == '=' {
+                        // Check if it's part of a comparison operator
+                        let before = if i > 0 { chars.get(i - 1) } else { None };
+                        let after = chars.get(i + 1);
+
+                        let is_comparison = matches!(before, Some(&'!') | Some(&'<') | Some(&'>') | Some(&'='))
+                            || matches!(after, Some(&'=') | Some(&'~'));
+
+                        if !is_comparison {
+                            offenses.push(Offense::new(
+                                self.name(),
+                                "Assignment in condition - use comparison or wrap in parentheses.",
+                                self.severity(),
+                                Location::new(line_number, i + 1, 1),
+                            ));
+                            break;
+                        }
                     }
                 }
             }
@@ -325,6 +337,14 @@ impl Cop for BinaryOperatorWithIdenticalOperands {
             let line_number = line_num + 1;
             for cap in BINARY_IDENTICAL_OPERANDS.captures_iter(line) {
                 let full_match = cap.get(0).unwrap();
+                let left_operand = cap.get(1).unwrap().as_str();
+                let right_operand = cap.get(3).unwrap().as_str();
+
+                // Only flag if the operands are actually identical
+                if left_operand != right_operand {
+                    continue;
+                }
+
                 let column = full_match.start() + 1;
                 if source.in_string_or_comment(line_number, column) {
                     continue;
@@ -598,9 +618,22 @@ impl Cop for FloatComparison {
         let mut offenses = Vec::new();
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
-            if line.contains(".0") || line.contains("Float") || line.contains("float") {
+            // Check if line contains float indicators
+            if line.contains(".0") || line.contains("Float") || line.contains("float")
+                || line.contains(".to_f") || line.contains("\\.") && line.contains("==") {
                 for cap in FLOAT_COMPARISON.captures_iter(line) {
                     let full_match = cap.get(0).unwrap();
+                    let matched_text = full_match.as_str();
+
+                    // Check if either operand looks like a float
+                    let has_decimal = matched_text.contains('.');
+                    let has_to_f = line.contains(".to_f");
+                    let has_float_keyword = line.contains("Float") || line.contains("float");
+
+                    if !has_decimal && !has_to_f && !has_float_keyword {
+                        continue;
+                    }
+
                     let column = full_match.start() + 1;
                     if source.in_string_or_comment(line_number, column) {
                         continue;
@@ -784,6 +817,14 @@ impl Cop for SelfAssignment {
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
             for cap in SELF_ASSIGNMENT.captures_iter(line) {
+                let left = cap.get(1).unwrap().as_str();
+                let right = cap.get(2).unwrap().as_str();
+
+                // Only flag if both sides are identical
+                if left != right {
+                    continue;
+                }
+
                 let full_match = cap.get(0).unwrap();
                 let column = full_match.start() + 1;
                 if source.in_string_or_comment(line_number, column) {
@@ -910,6 +951,14 @@ simple_cop!(IncompatibleIoSelectWithFiberScheduler, "Lint/IncompatibleIoSelectWi
 simple_cop!(HashNewWithKeywordArgumentsAsDefault, "Lint/HashNewWithKeywordArgumentsAsDefault", "Hash.new with kwargs");
 simple_cop!(NonDeterministicRequireOrder, "Lint/NonDeterministicRequireOrder", "Dir.glob without sort");
 simple_cop!(SafeNavigationWithEmpty, "Lint/SafeNavigationWithEmpty", "&.empty? issue");
+simple_cop!(ArrayLiteralInRegexp, "Lint/ArrayLiteralInRegexp", "Array literal in regexp");
+simple_cop!(DeprecatedConstants, "Lint/DeprecatedConstants", "Use of deprecated constants");
+simple_cop!(DeprecatedOpenSSLConstant, "Lint/DeprecatedOpenSSLConstant", "Use of deprecated OpenSSL constants");
+simple_cop!(MixedRegexpCaptureTypes, "Lint/MixedRegexpCaptureTypes", "Mixed named and numbered captures in regexp");
+simple_cop!(NumericOperationWithConstantResult, "Lint/NumericOperationWithConstantResult", "Numeric operation with constant result");
+simple_cop!(RedundantCopEnableDirective, "Lint/RedundantCopEnableDirective", "Redundant rubocop:enable directive");
+simple_cop!(UnescapedBracketInRegexp, "Lint/UnescapedBracketInRegexp", "Unescaped bracket in regexp");
+simple_cop!(LiteralAsCondition, "Lint/LiteralAsCondition", "Literal used as condition");
 
 /// Deprecated Derived cop - returns empty
 pub struct Derived;
@@ -954,6 +1003,134 @@ pub fn all_lint_extra_cops() -> Vec<Box<dyn Cop>> {
         Box::new(SelfAssignment),
         Box::new(SuppressedException),
         Box::new(Derived),
+        Box::new(DuplicateBranch),
+        Box::new(DuplicateCaseCondition),
+        Box::new(DuplicateElsifCondition),
+        Box::new(DuplicateHashKey),
+        Box::new(DuplicateMagicComment),
+        Box::new(DuplicateRequire),
+        Box::new(DuplicateRescueException),
+        Box::new(EmptyClass),
+        Box::new(EmptyConditionalBody),
+        Box::new(EmptyEnsure),
+        Box::new(EmptyWhen),
+        Box::new(EnsureReturn),
+        Box::new(FlipFlop),
+        Box::new(FloatOutOfRange),
+        Box::new(FormatParameterMismatch),
+        Box::new(IdentityComparison),
+        Box::new(ImplicitStringConcatenation),
+        Box::new(InheritException),
+        Box::new(LiteralInInterpolation),
+        Box::new(MissingSuper),
+        Box::new(NestedMethodDefinition),
+        Box::new(NestedPercentLiteral),
+        Box::new(NonLocalExitFromIterator),
+        Box::new(NumberConversion),
+        Box::new(OrAssignmentToConstant),
+        Box::new(OrderedMagicComments),
+        Box::new(ParenthesesAsGroupedExpression),
+        Box::new(PercentStringArray),
+        Box::new(PercentSymbolArray),
+        Box::new(RaiseException),
+        Box::new(RedundantCopDisableDirective),
+        Box::new(RedundantRequireStatement),
+        Box::new(RedundantWithIndex),
+        Box::new(RedundantWithObject),
+        Box::new(RegexpAsCondition),
+        Box::new(RescueType),
+        Box::new(ReturnInVoidContext),
+        Box::new(SafeNavigationChain),
+        Box::new(ScriptPermission),
+        Box::new(ShadowedException),
+        Box::new(ShadowingOuterLocalVariable),
+        Box::new(SymbolConversion),
+        Box::new(ToJSON),
+        Box::new(TopLevelReturnWithArgument),
+        Box::new(TrailingCommaInAttributeDeclaration),
+        Box::new(TripleQuotes),
+        Box::new(UnderscorePrefixedVariableName),
+        Box::new(UnifiedInteger),
+        Box::new(UnreachableCode),
+        Box::new(UnreachableLoop),
+        Box::new(UnusedBlockArgument),
+        Box::new(UnusedMethodArgument),
+        Box::new(UselessAssignment),
+        Box::new(UselessMethodDefinition),
+        Box::new(Void),
+        Box::new(LiteralAssignmentInCondition),
+        Box::new(SharedMutableDefault),
+        Box::new(MixedCaseRange),
+        Box::new(ItWithoutArgumentsInBlock),
+        Box::new(DuplicateSetElement),
+        Box::new(DuplicateMatchPattern),
+        Box::new(DuplicateRegexpCharacterClassElement),
+        Box::new(EmptyExpression),
+        Box::new(EmptyInPattern),
+        Box::new(HashCompareByIdentity),
+        Box::new(IneffectiveAccessModifier),
+        Box::new(InterpolationCheck),
+        Box::new(MissingCopEnableDirective),
+        Box::new(MultipleComparison),
+        Box::new(NextWithoutAccumulator),
+        Box::new(NoReturnInBeginEndBlocks),
+        Box::new(NonAtomicFileOperation),
+        Box::new(NumberedParameterAssignment),
+        Box::new(OutOfRangeRegexpRef),
+        Box::new(RedundantSafeNavigation),
+        Box::new(RedundantSplatExpansion),
+        Box::new(RequireParentheses),
+        Box::new(SafeNavigationConsistency),
+        Box::new(SendWithMixinArgument),
+        Box::new(ShadowedArgument),
+        Box::new(StructNewOverride),
+        Box::new(SuppressedExceptionInNumberConversion),
+        Box::new(Syntax),
+        Box::new(ToEnumArguments),
+        Box::new(UnexpectedBlockArity),
+        Box::new(UnmodifiedReduceAccumulator),
+        Box::new(UriEscapeUnescape),
+        Box::new(UriRegexp),
+        Box::new(UselessAccessModifier),
+        Box::new(UselessDefined),
+        Box::new(UselessElseWithoutRescue),
+        Box::new(UselessRescue),
+        Box::new(UselessSetterCall),
+        Box::new(UselessTimes),
+        Box::new(UselessOr),
+        Box::new(UselessConstantScoping),
+        Box::new(UselessDefaultValueArgument),
+        Box::new(UselessNumericOperation),
+        Box::new(UselessRuby2Keywords),
+        Box::new(RedundantDirGlobSort),
+        Box::new(RedundantRegexpQuantifiers),
+        Box::new(RedundantTypeConversion),
+        Box::new(RequireRangeParentheses),
+        Box::new(RequireRelativeSelfPath),
+        Box::new(RefinementImportMethods),
+        Box::new(LambdaWithoutLiteralBlock),
+        Box::new(HeredocMethodCallPosition),
+        Box::new(ErbNewArguments),
+        Box::new(AmbiguousBlockAssociation),
+        Box::new(AmbiguousOperatorPrecedence),
+        Box::new(ConstantOverwrittenInRescue),
+        Box::new(ConstantResolution),
+        Box::new(CopDirectiveSyntax),
+        Box::new(EachWithObjectArgument),
+        Box::new(ElseLayout),
+        Box::new(CircularArgumentReference),
+        Box::new(IncompatibleIoSelectWithFiberScheduler),
+        Box::new(HashNewWithKeywordArgumentsAsDefault),
+        Box::new(NonDeterministicRequireOrder),
+        Box::new(SafeNavigationWithEmpty),
+        Box::new(ArrayLiteralInRegexp),
+        Box::new(DeprecatedConstants),
+        Box::new(DeprecatedOpenSSLConstant),
+        Box::new(MixedRegexpCaptureTypes),
+        Box::new(NumericOperationWithConstantResult),
+        Box::new(RedundantCopEnableDirective),
+        Box::new(UnescapedBracketInRegexp),
+        Box::new(LiteralAsCondition),
     ]
 }
 

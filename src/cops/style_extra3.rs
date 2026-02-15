@@ -232,11 +232,30 @@ impl Cop for QuotedSymbols {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let quoted_symbol_regex = Regex::new(r#":(['""])(\w+)\1"#).unwrap();
+        // Match both single and double quoted symbols with simple identifiers
+        let single_quoted = Regex::new(r#":'(\w+)'"#).unwrap();
+        let double_quoted = Regex::new(r#":"(\w+)""#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
-            for capture in quoted_symbol_regex.captures_iter(line) {
+
+            // Check single-quoted symbols
+            for capture in single_quoted.captures_iter(line) {
+                if let Some(matched) = capture.get(0) {
+                    let col = matched.start() + 1;
+                    if !source.in_string_or_comment(line_number, col) {
+                        offenses.push(Offense::new(
+                            self.name(),
+                            "Use unquoted symbols when possible",
+                            self.severity(),
+                            Location::new(line_number, col, matched.len()),
+                        ));
+                    }
+                }
+            }
+
+            // Check double-quoted symbols
+            for capture in double_quoted.captures_iter(line) {
                 if let Some(matched) = capture.get(0) {
                     let col = matched.start() + 1;
                     if !source.in_string_or_comment(line_number, col) {
@@ -372,7 +391,7 @@ impl Cop for RedundantArgument {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let regex = Regex::new(r#"\.split\(['""]\\s+['"]\)"#).unwrap();
+        let regex = Regex::new(r#"\.split\(['"]\\s\+['"]\)"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
@@ -615,11 +634,19 @@ impl Cop for RedundantCondition {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let regex = Regex::new(r#"(\w+)\s*\?\s*\1\s*:"#).unwrap();
+        let regex = Regex::new(r#"(\w+)\s*\?\s*(\w+)\s*:"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
             for capture in regex.captures_iter(line) {
+                let condition = capture.get(1).unwrap().as_str();
+                let true_branch = capture.get(2).unwrap().as_str();
+
+                // Only flag if condition and true branch are identical
+                if condition != true_branch {
+                    continue;
+                }
+
                 if let Some(matched) = capture.get(0) {
                     let col = matched.start() + 1;
                     if !source.in_string_or_comment(line_number, col) {
@@ -1086,12 +1113,31 @@ impl Cop for RedundantHeredocDelimiterQuotes {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let regex = Regex::new(r#"<<[-~]?(['""])(\w+)\1"#).unwrap();
+        // Match single-quoted heredocs
+        let single_quote_regex = Regex::new(r#"<<[-~]?'(\w+)'"#).unwrap();
+        // Match double-quoted heredocs
+        let double_quote_regex = Regex::new(r#"<<[-~]?"(\w+)""#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
             if !line.contains("#{") {
-                for capture in regex.captures_iter(line) {
+                // Check single-quoted heredocs
+                for capture in single_quote_regex.captures_iter(line) {
+                    if let Some(matched) = capture.get(0) {
+                        let col = matched.start() + 1;
+                        if !source.in_string_or_comment(line_number, col) {
+                            offenses.push(Offense::new(
+                                self.name(),
+                                "Remove quotes from heredoc delimiter when interpolation is not used",
+                                self.severity(),
+                                Location::new(line_number, col, matched.len()),
+                            ));
+                        }
+                    }
+                }
+
+                // Check double-quoted heredocs
+                for capture in double_quote_regex.captures_iter(line) {
                     if let Some(matched) = capture.get(0) {
                         let col = matched.start() + 1;
                         if !source.in_string_or_comment(line_number, col) {
@@ -1487,11 +1533,19 @@ impl Cop for RedundantSelfAssignment {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let regex = Regex::new(r#"(self\.\w+)\s*=\s*\1\b"#).unwrap();
+        let regex = Regex::new(r#"(self\.\w+)\s*=\s*(self\.\w+)\b"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
             for capture in regex.captures_iter(line) {
+                let left = capture.get(1).unwrap().as_str();
+                let right = capture.get(2).unwrap().as_str();
+
+                // Only flag if both sides are identical
+                if left != right {
+                    continue;
+                }
+
                 if let Some(matched) = capture.get(0) {
                     let col = matched.start() + 1;
                     if !source.in_string_or_comment(line_number, col) {
@@ -1637,11 +1691,19 @@ impl Cop for RedundantSortBy {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let regex = Regex::new(r#"\.sort_by\s*\{\s*\|(\w+)\|\s*\1\s*\}"#).unwrap();
+        let regex = Regex::new(r#"\.sort_by\s*\{\s*\|(\w+)\|\s*(\w+)\s*\}"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
             for capture in regex.captures_iter(line) {
+                let param = capture.get(1).unwrap().as_str();
+                let body = capture.get(2).unwrap().as_str();
+
+                // Only flag if parameter and body are identical (identity block)
+                if param != body {
+                    continue;
+                }
+
                 if let Some(matched) = capture.get(0) {
                     let col = matched.start() + 1;
                     if !source.in_string_or_comment(line_number, col) {
@@ -3157,20 +3219,29 @@ impl Cop for AutoResourceCleanup {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let regex = Regex::new(r#"File\.open\([^)]+\)(?!\s*\{|\s*do)"#).unwrap();
+        let regex = Regex::new(r#"File\.open\([^)]+\)"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
             for capture in regex.find_iter(line) {
                 let col = capture.start() + 1;
-                if !source.in_string_or_comment(line_number, col) {
-                    offenses.push(Offense::new(
-                        self.name(),
-                        "Use block form of File.open for automatic resource cleanup",
-                        self.severity(),
-                        Location::new(line_number, col, capture.len()),
-                    ));
+                if source.in_string_or_comment(line_number, col) {
+                    continue;
                 }
+
+                // Check if followed by block (either { or do)
+                let after_match = &line[capture.end()..];
+                let trimmed = after_match.trim_start();
+                if trimmed.starts_with('{') || trimmed.starts_with("do") {
+                    continue;
+                }
+
+                offenses.push(Offense::new(
+                    self.name(),
+                    "Use block form of File.open for automatic resource cleanup",
+                    self.severity(),
+                    Location::new(line_number, col, capture.len()),
+                ));
             }
         }
 
@@ -3940,11 +4011,19 @@ impl Cop for ItBlockParameter {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let regex = Regex::new(r#"\{\s*\|(\w+)\|\s*\1\s*\}"#).unwrap();
+        let regex = Regex::new(r#"\{\s*\|(\w+)\|\s*(\w+)\s*\}"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
             for capture in regex.captures_iter(line) {
+                let param = capture.get(1).unwrap().as_str();
+                let body = capture.get(2).unwrap().as_str();
+
+                // Only flag if parameter and body are identical (identity block)
+                if param != body {
+                    continue;
+                }
+
                 if let Some(matched) = capture.get(0) {
                     let col = matched.start() + 1;
                     if !source.in_string_or_comment(line_number, col) {
@@ -5457,7 +5536,7 @@ pub fn all_style_extra3_cops() -> Vec<Box<dyn Cop>> {
         Box::new(ParallelAssignment),
         Box::new(PreferredHashMethods),
         Box::new(QuotedSymbols),
-        Box::new(RaiseArgs),
+        // Box::new(RaiseArgs),  // Duplicate - registered in style_extra1
         Box::new(RandomWithOffset),
         Box::new(RedundantArgument),
         Box::new(RedundantArrayConstructor),
@@ -5501,7 +5580,7 @@ pub fn all_style_extra3_cops() -> Vec<Box<dyn Cop>> {
         Box::new(SoleNestedConditional),
         Box::new(StabbyLambdaParentheses),
         Box::new(StaticClass),
-        Box::new(StderrPuts),
+        // Box::new(StderrPuts),  // Duplicate - registered in style_extra1
         Box::new(StringChars),
         Box::new(StringHashKeys),
         Box::new(StringLiteralsInInterpolation),
@@ -5527,9 +5606,9 @@ pub fn all_style_extra3_cops() -> Vec<Box<dyn Cop>> {
         Box::new(ComparableClamp),
         Box::new(DocumentDynamicEvalDefinition),
         Box::new(DocumentationMethod),
-        Box::new(EmptyClassDefinition),
-        Box::new(ExplicitBlockArgument),
-        Box::new(FloatDivision),
+        // Box::new(EmptyClassDefinition),  // Duplicate - registered in style_extra2
+        // Box::new(ExplicitBlockArgument),  // Duplicate - registered in style_extra2
+        // Box::new(FloatDivision),  // Duplicate - registered in style_extra2
         Box::new(ItAssignment),
         Box::new(ItBlockParameter),
         Box::new(KeywordArgumentsMerging),

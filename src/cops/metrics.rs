@@ -170,6 +170,14 @@ impl Cop for ClassLength {
                 depth += 1;
             }
 
+            // Count any def, module, class, if, unless, while, until, begin, etc. that increase depth
+            if METHOD_DEF_PATTERN.is_match(line) && !source.in_string_or_comment(line_number, 1) {
+                depth += 1;
+            }
+            if MODULE_PATTERN.is_match(line) && !source.in_string_or_comment(line_number, 1) {
+                depth += 1;
+            }
+
             if END_PATTERN.is_match(line) && !source.in_string_or_comment(line_number, 1) {
                 depth -= 1;
                 if depth == 0 {
@@ -620,7 +628,7 @@ impl Cop for CollectionLiteralLength {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let pattern = Regex::new(r#"[\[\{]\s*([^[\]{}]+)\s*[\]\}]"#).unwrap();
+        let pattern = Regex::new(r#"[\[\{]\s*([^\[\]\{\}]+)\s*[\]\}]"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;

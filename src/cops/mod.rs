@@ -11,6 +11,7 @@ pub mod lint_extra;
 pub mod naming;
 pub mod naming_extra;
 pub mod metrics;
+pub mod bundler_gemspec;
 
 use crate::cop::Cop;
 
@@ -145,6 +146,8 @@ pub fn all_cops() -> Vec<Box<dyn Cop>> {
     cops.append(&mut naming_extra::all_naming_extra_cops());
     // Add Metrics + Security cops
     cops.append(&mut metrics::all_metrics_cops());
+    // Add Bundler + Gemspec cops
+    cops.append(&mut bundler_gemspec::all_bundler_gemspec_cops());
 
     cops
 }

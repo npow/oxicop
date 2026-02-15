@@ -24,7 +24,7 @@ static BINARY_OPERATOR_PARAM_PATTERN: Lazy<Regex> = Lazy::new(|| {
 });
 
 static HEREDOC_DELIMITER_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"<<[-~]?([A-Z_][A-Z0-9_]*)"#).unwrap()
+    Regex::new(r#"<<[-~]?([A-Za-z_][A-Za-z0-9_]*)"#).unwrap()
 });
 
 static PREDICATE_METHOD_PATTERN: Lazy<Regex> = Lazy::new(|| {
@@ -562,7 +562,7 @@ impl Cop for RescuedExceptionsVariableName {
                     }
                     offenses.push(Offense::new(
                         self.name(),
-                        format!("Use `e` instead of `{}` for rescued exception", var_name),
+                        format!("Use `=> e` instead of `=> {}` for rescued exception", var_name),
                         self.severity(),
                         Location::new(line_number, column, full_match.len()),
                     ));

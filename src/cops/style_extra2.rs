@@ -645,8 +645,9 @@ impl Cop for VariableInterpolation {
             let line_number = line_num + 1;
             for mat in var_interp_regex.find_iter(line) {
                 let col = mat.start() + 1;
-                // Check if we're in a double-quoted string
-                if line.contains('"') && !source.in_string_or_comment(line_number, col - 1) {
+                // Check if we're in a double-quoted string (simplified check)
+                // The pattern #@var or #$var should be flagged
+                if line.contains('"') {
                     offenses.push(Offense::new(
                         self.name(),
                         "Use #{} for variable interpolation",
@@ -862,7 +863,7 @@ impl Cop for YodaCondition {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let yoda_regex = Regex::new(r#"(nil|\d+|true|false|['"]\w+['"]\s*(==|!=|<|>|<=|>=)\s*[a-z_]\w*"#).unwrap();
+        let yoda_regex = Regex::new(r#"(nil|\d+|true|false|['"]\w+['"])\s*(==|!=|<|>|<=|>=)\s*[a-z_]\w*"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
@@ -2505,14 +2506,22 @@ impl Cop for FetchEnvVar {
             let line_number = line_num + 1;
             for mat in env_bracket_regex.find_iter(line) {
                 let col = mat.start() + 1;
-                if !source.in_string_or_comment(line_number, col) && !line.contains("=") {
-                    offenses.push(Offense::new(
-                        self.name(),
-                        "Use ENV.fetch instead of ENV[]",
-                        self.severity(),
-                        Location::new(line_number, col, mat.len()),
-                    ));
+                if source.in_string_or_comment(line_number, col) {
+                    continue;
                 }
+
+                // Check if this is an assignment TO ENV (ENV['X'] = 'y'), not FROM ENV
+                let after_match = &line[mat.end()..];
+                if after_match.trim_start().starts_with('=') {
+                    continue;
+                }
+
+                offenses.push(Offense::new(
+                    self.name(),
+                    "Use ENV.fetch instead of ENV[]",
+                    self.severity(),
+                    Location::new(line_number, col, mat.len()),
+                ));
             }
         }
 
@@ -4203,7 +4212,7 @@ pub fn all_style_extra2_cops() -> Vec<Box<dyn Cop>> {
         Box::new(EachWithObject),
         Box::new(EmptyClassDefinition),
         Box::new(EmptyStringInsideInterpolation),
-        Box::new(EndBlock),
+        // Box::new(EndBlock),  // Duplicate - registered in style_extra1
         Box::new(EndlessMethod),
         Box::new(EnvHome),
         Box::new(EvalWithLocation),

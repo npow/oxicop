@@ -183,7 +183,7 @@ impl Cop for BarePercentLiterals {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let bare_percent_regex = Regex::new(r#"%[({[<]"#).unwrap();
+        let bare_percent_regex = Regex::new(r#"%[(\{\[<]"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
@@ -1029,14 +1029,14 @@ impl Cop for EmptyBlockParameter {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let empty_block_regex = Regex::new(r#"\{\s*\|\|\s*\}"#).unwrap();
+        let empty_block_regex = Regex::new(r#"\{\s*\|\|"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
-            
+
             for capture in empty_block_regex.find_iter(line) {
                 let start_col = capture.start() + 1;
-                
+
                 if source.in_string_or_comment(line_number, start_col) {
                     continue;
                 }
@@ -2417,14 +2417,23 @@ impl Cop for MixinUsage {
         let mixin_regex = Regex::new(r#"^\s+(include|extend|prepend)\s+\w+"#).unwrap();
         let mut in_class = false;
         let mut class_line = 0;
+        let mut depth = 0;
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
-            
+
             if line.trim().starts_with("class ") {
-                in_class = true;
-                class_line = line_number;
+                if !in_class {
+                    in_class = true;
+                    class_line = line_number;
+                }
+                depth += 1;
                 continue;
+            }
+
+            // Track def/module/etc that increase depth
+            if line.trim().starts_with("def ") || line.trim().starts_with("module ") {
+                depth += 1;
             }
 
             if in_class && mixin_regex.is_match(line) {
@@ -2439,7 +2448,10 @@ impl Cop for MixinUsage {
             }
 
             if line.trim() == "end" && in_class {
-                in_class = false;
+                depth -= 1;
+                if depth == 0 {
+                    in_class = false;
+                }
             }
         }
 
@@ -3311,17 +3323,32 @@ impl Cop for OrAssignment {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let or_assign_regex = Regex::new(r#"(\w+)\s*=\s*\1\s*\|\|"#).unwrap();
+        let or_assign_regex = Regex::new(r#"(\w+)\s*=\s*(\w+)\s*\|\|"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
-            
-            if or_assign_regex.is_match(line) {
+
+            for cap in or_assign_regex.captures_iter(line) {
+                let left = cap.get(1).unwrap().as_str();
+                let right = cap.get(2).unwrap().as_str();
+
+                // Only flag if both sides are identical
+                if left != right {
+                    continue;
+                }
+
+                let full_match = cap.get(0).unwrap();
+                let column = full_match.start() + 1;
+
+                if source.in_string_or_comment(line_number, column) {
+                    continue;
+                }
+
                 offenses.push(Offense::new(
                     self.name(),
                     "Use `||=` for conditional assignment",
                     self.severity(),
-                    Location::new(line_number, 1, line.len()),
+                    Location::new(line_number, column, full_match.len()),
                 ));
             }
         }
@@ -4158,17 +4185,32 @@ impl Cop for SafeNavigation {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let nil_check_regex = Regex::new(r#"(\w+)\s*&&\s*\1\."#).unwrap();
+        let nil_check_regex = Regex::new(r#"(\w+)\s*&&\s*(\w+)\."#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
-            
-            if nil_check_regex.is_match(line) {
+
+            for cap in nil_check_regex.captures_iter(line) {
+                let left = cap.get(1).unwrap().as_str();
+                let right = cap.get(2).unwrap().as_str();
+
+                // Only flag if both sides are identical
+                if left != right {
+                    continue;
+                }
+
+                let full_match = cap.get(0).unwrap();
+                let column = full_match.start() + 1;
+
+                if source.in_string_or_comment(line_number, column) {
+                    continue;
+                }
+
                 offenses.push(Offense::new(
                     self.name(),
                     "Use safe navigation operator `&.` instead of checking for nil",
                     self.severity(),
-                    Location::new(line_number, 1, line.len()),
+                    Location::new(line_number, column, full_match.len()),
                 ));
             }
         }
@@ -4202,17 +4244,32 @@ impl Cop for SelfAssignment {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let self_assign_regex = Regex::new(r#"(\w+)\s*=\s*\1\s*([+\-*/%])"#).unwrap();
+        let self_assign_regex = Regex::new(r#"(\w+)\s*=\s*(\w+)\s*([+\-*/%])"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
-            
-            if self_assign_regex.is_match(line) {
+
+            for cap in self_assign_regex.captures_iter(line) {
+                let left = cap.get(1).unwrap().as_str();
+                let right = cap.get(2).unwrap().as_str();
+
+                // Only flag if both sides are identical
+                if left != right {
+                    continue;
+                }
+
+                let full_match = cap.get(0).unwrap();
+                let column = full_match.start() + 1;
+
+                if source.in_string_or_comment(line_number, column) {
+                    continue;
+                }
+
                 offenses.push(Offense::new(
                     self.name(),
                     "Use self-assignment shorthand",
                     self.severity(),
-                    Location::new(line_number, 1, line.len()),
+                    Location::new(line_number, column, full_match.len()),
                 ));
             }
         }
