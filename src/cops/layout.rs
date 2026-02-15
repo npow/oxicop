@@ -480,7 +480,7 @@ impl SpaceAroundOperators {
         RE.get_or_init(|| {
             // Match operators: =>, ==, !=, <=, >=, +=, -=, &&, ||, =, +, -, *, /
             // But we need to check context to avoid unary operators
-            Regex::new(r"(=>|==|!=|<=|>=|\+=|-=|&&|\|\||[=+\-*/])").unwrap()
+            Regex::new(r#"(=>|==|!=|<=|>=|\+=|-=|&&|\|\||[=+\-*/])"#).unwrap()
         })
     }
     

@@ -21,31 +21,31 @@ static METHOD_PATTERN: Lazy<Regex> = Lazy::new(|| {
 });
 
 static VALID_METHOD_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^[a-z_][a-z0-9_]*[?!=]?$").unwrap()
+    Regex::new(r#"^[a-z_][a-z0-9_]*[?!=]?$"#).unwrap()
 });
 
 static ASSIGNMENT_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"([a-zA-Z_][a-zA-Z0-9_]*)\s*=[^=>~!]").unwrap()
+    Regex::new(r#"([a-zA-Z_][a-zA-Z0-9_]*)\s*=[^=>~!]"#).unwrap()
 });
 
 static VALID_VARIABLE_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^[a-z_][a-z0-9_]*$").unwrap()
+    Regex::new(r#"^[a-z_][a-z0-9_]*$"#).unwrap()
 });
 
 static CLASS_MODULE_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^\s*(class|module)\s+([a-zA-Z_][a-zA-Z0-9_]*)").unwrap()
+    Regex::new(r#"^\s*(class|module)\s+([a-zA-Z_][a-zA-Z0-9_]*)"#).unwrap()
 });
 
 static CONSTANT_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?:^|[^a-zA-Z0-9_])([A-Z][a-zA-Z0-9_]*)\s*=[^=>~!]").unwrap()
+    Regex::new(r#"(?:^|[^a-zA-Z0-9_])([A-Z][a-zA-Z0-9_]*)\s*=[^=>~!]"#).unwrap()
 });
 
 static VALID_PASCAL_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^[A-Z][a-zA-Z0-9]*$").unwrap()
+    Regex::new(r#"^[A-Z][a-zA-Z0-9]*$"#).unwrap()
 });
 
 static VALID_CONSTANT_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^[A-Z][A-Z0-9_]*$").unwrap()
+    Regex::new(r#"^[A-Z][A-Z0-9_]*$"#).unwrap()
 });
 
 /// Checks that method names use snake_case.

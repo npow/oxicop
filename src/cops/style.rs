@@ -193,8 +193,8 @@ impl Cop for NegatedIf {
         let mut offenses = Vec::new();
 
         // Match "if !" or "unless !" at statement start
-        let if_negated_regex = Regex::new(r"^\s*(if\s+!)").unwrap();
-        let unless_negated_regex = Regex::new(r"^\s*(unless\s+!)").unwrap();
+        let if_negated_regex = Regex::new(r#"^\s*(if\s+!)"#).unwrap();
+        let unless_negated_regex = Regex::new(r#"^\s*(unless\s+!)"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;

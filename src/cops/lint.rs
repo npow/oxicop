@@ -137,7 +137,7 @@ impl LiteralInCondition {
     pub fn new() -> Self {
         // Match if/unless followed by whitespace and then true/false/nil
         // We use \b for word boundaries to avoid matching `if true_value`
-        let pattern = Regex::new(r"\b(if|unless)\s+(true|false|nil)\b").unwrap();
+        let pattern = Regex::new(r#"\b(if|unless)\s+(true|false|nil)\b"#).unwrap();
         Self { pattern }
     }
 }
@@ -208,7 +208,7 @@ impl DuplicateMethods {
         // Match method definitions: `def method_name`
         // Exclude class methods: `def self.method_name`
         // We capture the method name for grouping
-        let pattern = Regex::new(r"^\s*def\s+([a-zA-Z_][a-zA-Z0-9_]*[?!]?)").unwrap();
+        let pattern = Regex::new(r#"^\s*def\s+([a-zA-Z_][a-zA-Z0-9_]*[?!]?)"#).unwrap();
         Self { pattern }
     }
 }
