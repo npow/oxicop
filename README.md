@@ -18,7 +18,7 @@
 
 - A drop-in `rubocop` replacement. [2-30x faster](BENCHMARKS.md) with the same `.rubocop.yml` config.
 - Replaces `rubocop` for the most common linting checks — no Ruby runtime needed.
-- 21 built-in cops across Layout, Style, Lint, and Naming categories.
+- 570 built-in cops across Layout, Style, Lint, Naming, Metrics, and Security categories.
 - Native parallelism. Files are checked concurrently out of the box.
 - A single static binary. ~3MB. No dependencies. Installs in seconds.
 - Built-in `.gitignore` support. Respects your project structure automatically.
@@ -79,23 +79,19 @@ Layout/IndentationWidth:
 
 ## Cops
 
-21 cops ship today, with more on the way.
+570 cops ship today, covering nearly all of RuboCop's core rule set.
 
-### Layout
+| Category | Cops |
+|----------|-----:|
+| Layout | 100 |
+| Style | 289 |
+| Lint | 145 |
+| Naming | 19 |
+| Metrics | 9 |
+| Security | 7 |
+| **Total** | **570** |
 
-`TrailingWhitespace` | `TrailingEmptyLines` | `LeadingEmptyLines` | `EndOfLine` | `IndentationStyle` | `IndentationWidth` | `SpaceAfterComma` | `SpaceAroundOperators` | `EmptyLineBetweenDefs` | `SpaceInsideParens`
-
-### Style
-
-`FrozenStringLiteralComment` | `StringLiterals` | `NegatedIf` | `RedundantReturn` | `EmptyMethod`
-
-### Lint
-
-`Debugger` | `LiteralInCondition` | `DuplicateMethods`
-
-### Naming
-
-`MethodName` | `VariableName` | `ConstantName`
+Run `oxicop --list` to see all available cops.
 
 ## Benchmarks
 
@@ -117,7 +113,7 @@ See the [full benchmarks](BENCHMARKS.md) for results across Jekyll, RuboCop, Mas
 
 ## Why oxicop?
 
-[RuboCop](https://github.com/rubocop/rubocop) is excellent. It has ~99% test coverage, 700+ cops, and powers nearly every Ruby project. But it pays the cost of the Ruby runtime — slow startup, high memory usage, and linear file processing.
+[RuboCop](https://github.com/rubocop/rubocop) is excellent. It has ~99% test coverage, ~591 cops, and powers nearly every Ruby project. But it pays the cost of the Ruby runtime — slow startup, high memory usage, and linear file processing. oxicop implements 570 of those cops (96% coverage) in Rust.
 
 Other ecosystems have already solved this:
 
@@ -133,9 +129,9 @@ oxicop brings the same idea to Ruby: rewrite the hot path in Rust, keep the same
 
 The highest-impact contributions right now:
 
-1. **More cops** — port rules from [RuboCop's full list](https://docs.rubocop.org/rubocop/cops.html)
-2. **Autocorrect** — `--fix` support for automatic corrections
-3. **Tree-sitter** — replace line-based heuristics with `tree-sitter-ruby` for accurate AST analysis
+1. **Autocorrect** — `--fix` support for automatic corrections
+2. **Tree-sitter** — replace line-based heuristics with `tree-sitter-ruby` for accurate AST analysis
+3. **Bundler/Gemspec cops** — port the remaining ~17 cops for Bundler and Gemspec categories
 4. **Benchmarks** — expand coverage with `hyperfine` across more real-world repos
 
 ## License
