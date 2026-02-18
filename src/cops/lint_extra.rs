@@ -1,7 +1,6 @@
 //! Additional Lint cops for detecting code quality issues.
 
 use regex::Regex;
-use std::collections::{HashMap, HashSet};
 use once_cell::sync::Lazy;
 
 use crate::cop::{Category, Cop, Severity};
@@ -16,7 +15,7 @@ static AMBIGUOUS_ASSIGNMENT: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"\b([a-z_][a-z0-9_]*)\s*=([+\-*/])\s"#).unwrap()
 });
 
-static ASSIGNMENT_IN_CONDITION: Lazy<Regex> = Lazy::new(|| {
+static _ASSIGNMENT_IN_CONDITION: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"\b(if|unless|while|until)\s+.*?([a-z_][a-z0-9_]*)\s*=[^=]"#).unwrap()
 });
 
@@ -32,7 +31,7 @@ static BOOLEAN_SYMBOL: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#":(true|false)\b"#).unwrap()
 });
 
-static CONSTANT_DEFINITION_IN_BLOCK: Lazy<Regex> = Lazy::new(|| {
+static _CONSTANT_DEFINITION_IN_BLOCK: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"\b(do|each|map|select)\s+.*?[A-Z][A-Z0-9_]*\s*="#).unwrap()
 });
 
@@ -40,7 +39,7 @@ static DEPRECATED_CLASS_METHODS: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"(File\.exists\?|Dir\.exists\?)"#).unwrap()
 });
 
-static DUPLICATE_HASH_KEY: Lazy<Regex> = Lazy::new(|| {
+static _DUPLICATE_HASH_KEY: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"([a-z_][a-z0-9_]*):"#).unwrap()
 });
 
@@ -48,7 +47,7 @@ static EMPTY_BLOCK: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"\{\s*\}|\bdo\s*\bend"#).unwrap()
 });
 
-static EMPTY_CLASS: Lazy<Regex> = Lazy::new(|| {
+static _EMPTY_CLASS: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"^\s*class\s+[A-Z][a-zA-Z0-9]*\s*\n\s*end"#).unwrap()
 });
 
@@ -56,7 +55,7 @@ static EMPTY_INTERPOLATION: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"#\{\s*\}"#).unwrap()
 });
 
-static ENSURE_RETURN: Lazy<Regex> = Lazy::new(|| {
+static _ENSURE_RETURN: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"\bensure\b"#).unwrap()
 });
 
@@ -68,7 +67,7 @@ static LOOP_WHILE_TRUE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"\b(while\s+true|until\s+false)\b"#).unwrap()
 });
 
-static NESTED_METHOD_DEF: Lazy<Regex> = Lazy::new(|| {
+static _NESTED_METHOD_DEF: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"^\s*def\s+"#).unwrap()
 });
 
@@ -88,19 +87,19 @@ static SELF_ASSIGNMENT: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"\b([a-z_][a-z0-9_]*)\s*=\s*([a-z_][a-z0-9_]*)\b"#).unwrap()
 });
 
-static SUPPRESSED_EXCEPTION: Lazy<Regex> = Lazy::new(|| {
+static _SUPPRESSED_EXCEPTION: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"\brescue\s*\n"#).unwrap()
 });
 
-static UNREACHABLE_CODE: Lazy<Regex> = Lazy::new(|| {
+static _UNREACHABLE_CODE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"\b(return|raise|break|next)\b"#).unwrap()
 });
 
-static USELESS_ASSIGNMENT: Lazy<Regex> = Lazy::new(|| {
+static _USELESS_ASSIGNMENT: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"\b([a-z_][a-z0-9_]*)\s*="#).unwrap()
 });
 
-static VOID_CONTEXT: Lazy<Regex> = Lazy::new(|| {
+static _VOID_CONTEXT: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"^\s*(&&|\|\||<=>|==)"#).unwrap()
 });
 

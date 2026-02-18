@@ -92,8 +92,8 @@ impl Cop for AsciiComments {
             
             if let Some(comment_start) = line.find('#') {
                 let comment = &line[comment_start..];
-                
-                if comment.chars().any(|c| !c.is_ascii()) {
+
+                if !comment.is_ascii() {
                     offenses.push(Offense::new(
                         self.name(),
                         "Use only ASCII characters in comments",
@@ -687,7 +687,7 @@ impl Cop for CommentAnnotation {
                     
                     offenses.push(Offense::new(
                         self.name(),
-                        format!("Annotation keywords should be followed by a colon and space"),
+                        "Annotation keywords should be followed by a colon and space".to_string(),
                         self.severity(),
                         Location::new(line_number, start_col, matched.len()),
                     ));
@@ -1540,7 +1540,7 @@ impl Cop for FormatString {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let format_regex = Regex::new(r#"(sprintf|String#%)"#).unwrap();
+        let _format_regex = Regex::new(r#"(sprintf|String#%)"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
@@ -1713,8 +1713,8 @@ impl Cop for GuardClause {
                     let next_trimmed = next_line.trim();
                     if next_trimmed.starts_with("if ") || next_trimmed.starts_with("unless ") {
                         let mut depth = 1;
-                        let mut all_in_conditional = true;
-                        
+                        let _all_in_conditional = true;
+
                         for i in (line_number + 2)..=(line_number + 10).min(source.line_count()) {
                             if let Some(l) = source.line(i) {
                                 let trimmed = l.trim();
@@ -2273,17 +2273,15 @@ impl Cop for MagicCommentFormat {
             let line_number = line_num + 1;
             
             if let Some(line) = source.line(line_number) {
-                if line.contains("coding:") || line.contains("encoding:") {
-                    if !line.contains("# frozen_string_literal:") && !line.starts_with("#!") {
-                        if !line.starts_with("# ") {
-                            offenses.push(Offense::new(
-                                self.name(),
-                                "Magic comment should have space after #",
-                                self.severity(),
-                                Location::new(line_number, 1, line.len()),
-                            ));
-                        }
-                    }
+                if (line.contains("coding:") || line.contains("encoding:"))
+                    && !line.contains("# frozen_string_literal:") && !line.starts_with("#!")
+                    && !line.starts_with("# ") {
+                    offenses.push(Offense::new(
+                        self.name(),
+                        "Magic comment should have space after #",
+                        self.severity(),
+                        Location::new(line_number, 1, line.len()),
+                    ));
                 }
             }
         }
@@ -2436,15 +2434,14 @@ impl Cop for MixinUsage {
                 depth += 1;
             }
 
-            if in_class && mixin_regex.is_match(line) {
-                if line_number - class_line > 10 {
-                    offenses.push(Offense::new(
-                        self.name(),
-                        "Use `include`/`extend`/`prepend` at the top of the class",
-                        self.severity(),
-                        Location::new(line_number, 1, line.len()),
-                    ));
-                }
+            if in_class && mixin_regex.is_match(line)
+                && line_number - class_line > 10 {
+                offenses.push(Offense::new(
+                    self.name(),
+                    "Use `include`/`extend`/`prepend` at the top of the class",
+                    self.severity(),
+                    Location::new(line_number, 1, line.len()),
+                ));
             }
 
             if line.trim() == "end" && in_class {
@@ -2962,7 +2959,7 @@ impl Cop for NonNilCheck {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let non_nil_regex = Regex::new(r#"!\w+\.nil\?"#).unwrap();
+        let _non_nil_regex = Regex::new(r#"!\w+\.nil\?"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;

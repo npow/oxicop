@@ -375,10 +375,9 @@ impl Cop for BlockNesting {
                 }
             }
 
-            if BLOCK_END_PATTERN.is_match(line) && !source.in_string_or_comment(line_number, 1) {
-                if depth > 0 {
-                    depth -= 1;
-                }
+            if BLOCK_END_PATTERN.is_match(line) && !source.in_string_or_comment(line_number, 1)
+                && depth > 0 {
+                depth = depth.saturating_sub(1);
             }
         }
 
@@ -1007,7 +1006,7 @@ mod tests {
         let cop = BlockNesting::new();
         let source = test_source("items.each do |i|\n  i.map do |j|\n    j.select do |k|\n      k.each do |l|\n        puts l\n      end\n    end\n  end\nend\n");
         let offenses = cop.check(&source);
-        assert!(offenses.len() >= 1);
+        assert!(!offenses.is_empty());
     }
 
     #[test]

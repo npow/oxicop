@@ -39,7 +39,7 @@ static FILE_NAME_PATTERN: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"^[a-z][a-z0-9_]*\.rb$"#).unwrap()
 });
 
-static CAMEL_CASE_CLASS: Lazy<Regex> = Lazy::new(|| {
+static _CAMEL_CASE_CLASS: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"^\s*(class|module)\s+([A-Z][a-zA-Z0-9]*)"#).unwrap()
 });
 
@@ -666,7 +666,7 @@ mod tests {
         let cop = AsciiIdentifiers;
         let source = test_source("def café\nend\n");
         let offenses = cop.check(&source);
-        assert!(offenses.len() >= 1);
+        assert!(!offenses.is_empty());
     }
 
     #[test]

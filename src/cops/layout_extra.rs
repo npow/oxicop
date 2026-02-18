@@ -544,7 +544,7 @@ impl Cop for SpaceBeforeComment {
             }
             
             for mat in SPACE_BEFORE_COMMENT_RE.find_iter(line) {
-                let col = mat.start() + 2; // Column of #
+                let _col = mat.start() + 2; // Column of #
                 // Make sure # is actually a comment, not in string
                 if let Some(hash_pos) = line[mat.start()..].find('#') {
                     let actual_col = mat.start() + hash_pos + 1;
@@ -1450,7 +1450,7 @@ impl Cop for ConditionPosition {
             let line_number = line_num + 1;
             
             let trimmed = line.trim();
-            if (trimmed == "if" || trimmed == "unless" || trimmed == "while" || trimmed == "until") {
+            if trimmed == "if" || trimmed == "unless" || trimmed == "while" || trimmed == "until" {
                 offenses.push(Offense::new(
                     self.name(),
                     "Place condition on same line as keyword.",
@@ -2518,7 +2518,7 @@ mod tests {
     fn test_space_inside_array_fail() {
         let source = test_source("[ 1, 2 ]\n");
         let cop = SpaceInsideArrayLiteralBrackets;
-        assert!(cop.check(&source).len() > 0);
+        assert!(!cop.check(&source).is_empty());
     }
 
     // SpaceInsideHashLiteralBraces tests
@@ -2533,7 +2533,7 @@ mod tests {
     fn test_space_inside_hash_fail() {
         let source = test_source("{ a: 1 }\n");
         let cop = SpaceInsideHashLiteralBraces;
-        assert!(cop.check(&source).len() > 0);
+        assert!(!cop.check(&source).is_empty());
     }
 
     // SpaceInsideRangeLiteral tests
@@ -2548,7 +2548,7 @@ mod tests {
     fn test_space_inside_range_fail() {
         let source = test_source("1 .. 10\n");
         let cop = SpaceInsideRangeLiteral;
-        assert!(cop.check(&source).len() > 0);
+        assert!(!cop.check(&source).is_empty());
     }
 
     // Additional tests for remaining cops

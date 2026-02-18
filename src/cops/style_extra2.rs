@@ -2064,17 +2064,16 @@ impl Cop for EmptyClassDefinition {
             let line_number = i + 1;
             let line = &source.lines[i];
 
-            if class_regex.is_match(line) {
-                if i + 1 < source.lines.len() {
-                    let next_line = source.lines[i + 1].trim();
-                    if next_line == "end" {
-                        offenses.push(Offense::new(
-                            self.name(),
-                            "Empty class definition",
-                            self.severity(),
-                            Location::new(line_number, 1, line.len()),
-                        ));
-                    }
+            if class_regex.is_match(line)
+                && i + 1 < source.lines.len() {
+                let next_line = source.lines[i + 1].trim();
+                if next_line == "end" {
+                    offenses.push(Offense::new(
+                        self.name(),
+                        "Empty class definition",
+                        self.severity(),
+                        Location::new(line_number, 1, line.len()),
+                    ));
                 }
             }
 
@@ -2187,11 +2186,11 @@ impl Cop for EndlessMethod {
     }
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
-        let mut offenses = Vec::new();
+        let offenses = Vec::new();
         let endless_regex = Regex::new(r#"^\s*def\s+\w+.*=\s*[^=]"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
-            let line_number = line_num + 1;
+            let _line_number = line_num + 1;
             if endless_regex.is_match(line) && !line.contains("==") {
                 // This is good - encourage endless methods
                 // No offense here, but could check if NOT using endless
@@ -2273,15 +2272,14 @@ impl Cop for EvalWithLocation {
             let line_number = line_num + 1;
             for mat in eval_regex.find_iter(line) {
                 let col = mat.start() + 1;
-                if !source.in_string_or_comment(line_number, col) {
-                    if !line.contains("__FILE__") || !line.contains("__LINE__") {
-                        offenses.push(Offense::new(
-                            self.name(),
-                            "Pass __FILE__ and __LINE__ to eval",
-                            self.severity(),
-                            Location::new(line_number, col, mat.len()),
-                        ));
-                    }
+                if !source.in_string_or_comment(line_number, col)
+                    && (!line.contains("__FILE__") || !line.contains("__LINE__")) {
+                    offenses.push(Offense::new(
+                        self.name(),
+                        "Pass __FILE__ and __LINE__ to eval",
+                        self.severity(),
+                        Location::new(line_number, col, mat.len()),
+                    ));
                 }
             }
         }
@@ -2953,7 +2951,7 @@ impl Cop for HashLikeCase {
         "Checks for hash-like if/elsif"
     }
 
-    fn check(&self, source: &SourceFile) -> Vec<Offense> {
+    fn check(&self, _source: &SourceFile) -> Vec<Offense> {
         // Similar to CaseLikeIf - already implemented
         Vec::new()
     }
@@ -3030,15 +3028,14 @@ impl Cop for HashTransformKeys {
             let line_number = line_num + 1;
             for mat in map_keys_regex.find_iter(line) {
                 let col = mat.start() + 1;
-                if !source.in_string_or_comment(line_number, col) {
-                    if line.contains("to_h") {
-                        offenses.push(Offense::new(
-                            self.name(),
-                            "Use transform_keys instead of map",
-                            self.severity(),
-                            Location::new(line_number, col, mat.len()),
-                        ));
-                    }
+                if !source.in_string_or_comment(line_number, col)
+                    && line.contains("to_h") {
+                    offenses.push(Offense::new(
+                        self.name(),
+                        "Use transform_keys instead of map",
+                        self.severity(),
+                        Location::new(line_number, col, mat.len()),
+                    ));
                 }
             }
         }
@@ -3075,15 +3072,14 @@ impl Cop for HashTransformValues {
             let line_number = line_num + 1;
             for mat in map_values_regex.find_iter(line) {
                 let col = mat.start() + 1;
-                if !source.in_string_or_comment(line_number, col) {
-                    if line.contains("to_h") {
-                        offenses.push(Offense::new(
-                            self.name(),
-                            "Use transform_values instead of map",
-                            self.severity(),
-                            Location::new(line_number, col, mat.len()),
-                        ));
-                    }
+                if !source.in_string_or_comment(line_number, col)
+                    && line.contains("to_h") {
+                    offenses.push(Offense::new(
+                        self.name(),
+                        "Use transform_values instead of map",
+                        self.severity(),
+                        Location::new(line_number, col, mat.len()),
+                    ));
                 }
             }
         }
@@ -3194,7 +3190,7 @@ impl Cop for InPatternThen {
 
     fn check(&self, source: &SourceFile) -> Vec<Offense> {
         let mut offenses = Vec::new();
-        let in_pattern_regex = Regex::new(r#"^\s*in\s+.*[^t][^h][^e][^n]\s*$"#).unwrap();
+        let _in_pattern_regex = Regex::new(r#"^\s*in\s+.*[^t][^h][^e][^n]\s*$"#).unwrap();
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
@@ -3623,7 +3619,7 @@ impl Cop for MissingElse {
         "Checks for missing else clause"
     }
 
-    fn check(&self, source: &SourceFile) -> Vec<Offense> {
+    fn check(&self, _source: &SourceFile) -> Vec<Offense> {
         // This is configurable - by default we don't enforce
         Vec::new()
     }
@@ -3825,7 +3821,7 @@ impl Cop for MultilineIfModifier {
         "Checks for modifier if on multiline expressions"
     }
 
-    fn check(&self, source: &SourceFile) -> Vec<Offense> {
+    fn check(&self, _source: &SourceFile) -> Vec<Offense> {
         // Complex to detect multiline expressions accurately
         Vec::new()
     }
@@ -4021,7 +4017,7 @@ impl Cop for NumberedParameters {
         "Checks for numbered parameters"
     }
 
-    fn check(&self, source: &SourceFile) -> Vec<Offense> {
+    fn check(&self, _source: &SourceFile) -> Vec<Offense> {
         // This checks if numbered params should be used
         Vec::new()
     }

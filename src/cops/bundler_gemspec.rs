@@ -627,16 +627,15 @@ impl Cop for DevelopmentDependencies {
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
 
-            if source.path.to_string_lossy().ends_with(".gemspec") {
-                if gem_regex.is_match(line) {
-                    let col = gem_regex.find(line).unwrap().start() + 1;
-                    offenses.push(Offense::new(
-                        self.name(),
-                        "Use `add_development_dependency` instead of `gem` in gemspec",
-                        self.severity(),
-                        Location::new(line_number, col, 3),
-                    ));
-                }
+            if source.path.to_string_lossy().ends_with(".gemspec")
+                && gem_regex.is_match(line) {
+                let col = gem_regex.find(line).unwrap().start() + 1;
+                offenses.push(Offense::new(
+                    self.name(),
+                    "Use `add_development_dependency` instead of `gem` in gemspec",
+                    self.severity(),
+                    Location::new(line_number, col, 3),
+                ));
             }
         }
 

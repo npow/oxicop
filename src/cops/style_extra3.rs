@@ -1802,7 +1802,7 @@ impl Cop for RequireOrder {
             let trimmed = line.trim();
             
             if trimmed.starts_with("require ") || trimmed.starts_with("require_relative ") {
-                if let Some((last_line, last_req)) = &last_require {
+                if let Some((_last_line, last_req)) = &last_require {
                     if trimmed < last_req.as_str() {
                         offenses.push(Offense::new(
                             self.name(),
@@ -1898,7 +1898,7 @@ impl Cop for ReturnNilInPredicateMethodDefinition {
         let return_nil_regex = Regex::new(r#"\breturn\s+nil\b"#).unwrap();
 
         let mut in_predicate = false;
-        let mut predicate_start = 0;
+        let mut _predicate_start = 0;
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
@@ -1906,7 +1906,7 @@ impl Cop for ReturnNilInPredicateMethodDefinition {
 
             if let Some(capture) = def_regex.captures(trimmed) {
                 in_predicate = true;
-                predicate_start = line_number;
+                _predicate_start = line_number;
                 if let Some(_method_name) = capture.get(1) {
                     // Predicatemethod found
                 }
@@ -3449,7 +3449,7 @@ impl Cop for CollectionMethods {
                         };
                         offenses.push(Offense::new(
                             self.name(),
-                            &format!("Use '{}' instead of '{}'", preferred, method.as_str()),
+                            format!("Use '{}' instead of '{}'", preferred, method.as_str()),
                             self.severity(),
                             Location::new(line_number, col, method.len()),
                         ));
@@ -3859,7 +3859,7 @@ impl Cop for ExplicitBlockArgument {
         let mut offenses = Vec::new();
         let def_regex = Regex::new(r#"def\s+\w+\([^)]*\)"#).unwrap();
         let mut in_method_without_block = false;
-        let mut method_start = 0;
+        let mut _method_start = 0;
 
         for (line_num, line) in source.lines.iter().enumerate() {
             let line_number = line_num + 1;
@@ -3868,7 +3868,7 @@ impl Cop for ExplicitBlockArgument {
             if let Some(_capture) = def_regex.captures(trimmed) {
                 if !line.contains("&block") && !line.contains("&blk") {
                     in_method_without_block = true;
-                    method_start = line_number;
+                    _method_start = line_number;
                 } else {
                     in_method_without_block = false;
                 }
@@ -4694,6 +4694,109 @@ impl Cop for FileTouch {
 
         offenses
     }
+}
+
+// ============================================================================
+// Registry function to get all cops from this module
+// ============================================================================
+
+pub fn all_style_extra3_cops() -> Vec<Box<dyn Cop>> {
+    vec![
+        Box::new(OptionHash),
+        Box::new(OptionalArguments),
+        Box::new(ParallelAssignment),
+        Box::new(PreferredHashMethods),
+        Box::new(QuotedSymbols),
+        // Box::new(RaiseArgs),  // Duplicate - registered in style_extra1
+        Box::new(RandomWithOffset),
+        Box::new(RedundantArgument),
+        Box::new(RedundantArrayConstructor),
+        Box::new(RedundantArrayFlatten),
+        Box::new(RedundantAssignment),
+        Box::new(RedundantCapitalW),
+        Box::new(RedundantCondition),
+        Box::new(RedundantConditional),
+        Box::new(RedundantConstantBase),
+        Box::new(RedundantCurrentDirectoryInPath),
+        Box::new(RedundantDoubleSplatHashBraces),
+        Box::new(RedundantEach),
+        Box::new(RedundantFetchBlock),
+        Box::new(RedundantFileExtensionInRequire),
+        Box::new(RedundantFilterChain),
+        Box::new(RedundantFormat),
+        Box::new(RedundantHeredocDelimiterQuotes),
+        Box::new(RedundantInitialize),
+        Box::new(RedundantInterpolationUnfreeze),
+        Box::new(RedundantLineContinuation),
+        Box::new(RedundantRegexpArgument),
+        Box::new(RedundantRegexpCharacterClass),
+        Box::new(RedundantRegexpConstructor),
+        Box::new(RedundantRegexpEscape),
+        Box::new(RedundantSelfAssignment),
+        Box::new(RedundantSelfAssignmentBranch),
+        Box::new(RedundantSort),
+        Box::new(RedundantSortBy),
+        Box::new(RedundantStringEscape),
+        Box::new(RequireOrder),
+        Box::new(ReturnNil),
+        Box::new(ReturnNilInPredicateMethodDefinition),
+        Box::new(ReverseFind),
+        Box::new(Sample),
+        Box::new(SelectByRegexp),
+        Box::new(SendWithLiteralMethodName),
+        Box::new(SingleArgumentDig),
+        Box::new(SingleLineBlockParams),
+        Box::new(SingleLineDoEndBlock),
+        Box::new(SlicingWithRange),
+        Box::new(SoleNestedConditional),
+        Box::new(StabbyLambdaParentheses),
+        Box::new(StaticClass),
+        // Box::new(StderrPuts),  // Duplicate - registered in style_extra1
+        Box::new(StringChars),
+        Box::new(StringHashKeys),
+        Box::new(StringLiteralsInInterpolation),
+        Box::new(StringMethods),
+        Box::new(Strip),
+        Box::new(SuperArguments),
+        Box::new(SuperWithArgsParentheses),
+        Box::new(SwapValues),
+        Box::new(TopLevelMethodDefinition),
+        Box::new(HashFetchChain),
+        Box::new(HashLookupMethod),
+        Box::new(ConstantVisibility),
+        Box::new(AmbiguousEndlessMethodDefinition),
+        Box::new(ArgumentsForwarding),
+        Box::new(AutoResourceCleanup),
+        Box::new(BisectedAttrAccessor),
+        Box::new(BitwisePredicate),
+        Box::new(ClassMethodsDefinitions),
+        Box::new(CollectionMethods),
+        Box::new(CollectionQuerying),
+        Box::new(CombinableDefined),
+        Box::new(ComparableBetween),
+        Box::new(ComparableClamp),
+        Box::new(DocumentDynamicEvalDefinition),
+        Box::new(DocumentationMethod),
+        // Box::new(EmptyClassDefinition),  // Duplicate - registered in style_extra2
+        // Box::new(ExplicitBlockArgument),  // Duplicate - registered in style_extra2
+        // Box::new(FloatDivision),  // Duplicate - registered in style_extra2
+        Box::new(ItAssignment),
+        Box::new(ItBlockParameter),
+        Box::new(KeywordArgumentsMerging),
+        Box::new(MapCompactWithConditionalBlock),
+        Box::new(MapIntoArray),
+        Box::new(MapToSet),
+        Box::new(MinMaxComparison),
+        Box::new(ModuleMemberExistenceCheck),
+        Box::new(MultilineInPatternThen),
+        Box::new(NegatedIfElseCondition),
+        Box::new(NegativeArrayIndex),
+        Box::new(NestedFileDirname),
+        Box::new(NumberedParametersLimit),
+        Box::new(SafeNavigationChainLength),
+        Box::new(YAMLFileRead),
+        Box::new(FileTouch),
+    ]
 }
 
 // ============================================================================
@@ -5523,107 +5626,4 @@ mod tests {
         let offenses = cop.check(&source);
         assert_eq!(offenses.len(), 0);
     }
-}
-
-// ============================================================================
-// Registry function to get all cops from this module
-// ============================================================================
-
-pub fn all_style_extra3_cops() -> Vec<Box<dyn Cop>> {
-    vec![
-        Box::new(OptionHash),
-        Box::new(OptionalArguments),
-        Box::new(ParallelAssignment),
-        Box::new(PreferredHashMethods),
-        Box::new(QuotedSymbols),
-        // Box::new(RaiseArgs),  // Duplicate - registered in style_extra1
-        Box::new(RandomWithOffset),
-        Box::new(RedundantArgument),
-        Box::new(RedundantArrayConstructor),
-        Box::new(RedundantArrayFlatten),
-        Box::new(RedundantAssignment),
-        Box::new(RedundantCapitalW),
-        Box::new(RedundantCondition),
-        Box::new(RedundantConditional),
-        Box::new(RedundantConstantBase),
-        Box::new(RedundantCurrentDirectoryInPath),
-        Box::new(RedundantDoubleSplatHashBraces),
-        Box::new(RedundantEach),
-        Box::new(RedundantFetchBlock),
-        Box::new(RedundantFileExtensionInRequire),
-        Box::new(RedundantFilterChain),
-        Box::new(RedundantFormat),
-        Box::new(RedundantHeredocDelimiterQuotes),
-        Box::new(RedundantInitialize),
-        Box::new(RedundantInterpolationUnfreeze),
-        Box::new(RedundantLineContinuation),
-        Box::new(RedundantRegexpArgument),
-        Box::new(RedundantRegexpCharacterClass),
-        Box::new(RedundantRegexpConstructor),
-        Box::new(RedundantRegexpEscape),
-        Box::new(RedundantSelfAssignment),
-        Box::new(RedundantSelfAssignmentBranch),
-        Box::new(RedundantSort),
-        Box::new(RedundantSortBy),
-        Box::new(RedundantStringEscape),
-        Box::new(RequireOrder),
-        Box::new(ReturnNil),
-        Box::new(ReturnNilInPredicateMethodDefinition),
-        Box::new(ReverseFind),
-        Box::new(Sample),
-        Box::new(SelectByRegexp),
-        Box::new(SendWithLiteralMethodName),
-        Box::new(SingleArgumentDig),
-        Box::new(SingleLineBlockParams),
-        Box::new(SingleLineDoEndBlock),
-        Box::new(SlicingWithRange),
-        Box::new(SoleNestedConditional),
-        Box::new(StabbyLambdaParentheses),
-        Box::new(StaticClass),
-        // Box::new(StderrPuts),  // Duplicate - registered in style_extra1
-        Box::new(StringChars),
-        Box::new(StringHashKeys),
-        Box::new(StringLiteralsInInterpolation),
-        Box::new(StringMethods),
-        Box::new(Strip),
-        Box::new(SuperArguments),
-        Box::new(SuperWithArgsParentheses),
-        Box::new(SwapValues),
-        Box::new(TopLevelMethodDefinition),
-        Box::new(HashFetchChain),
-        Box::new(HashLookupMethod),
-        Box::new(ConstantVisibility),
-        Box::new(AmbiguousEndlessMethodDefinition),
-        Box::new(ArgumentsForwarding),
-        Box::new(AutoResourceCleanup),
-        Box::new(BisectedAttrAccessor),
-        Box::new(BitwisePredicate),
-        Box::new(ClassMethodsDefinitions),
-        Box::new(CollectionMethods),
-        Box::new(CollectionQuerying),
-        Box::new(CombinableDefined),
-        Box::new(ComparableBetween),
-        Box::new(ComparableClamp),
-        Box::new(DocumentDynamicEvalDefinition),
-        Box::new(DocumentationMethod),
-        // Box::new(EmptyClassDefinition),  // Duplicate - registered in style_extra2
-        // Box::new(ExplicitBlockArgument),  // Duplicate - registered in style_extra2
-        // Box::new(FloatDivision),  // Duplicate - registered in style_extra2
-        Box::new(ItAssignment),
-        Box::new(ItBlockParameter),
-        Box::new(KeywordArgumentsMerging),
-        Box::new(MapCompactWithConditionalBlock),
-        Box::new(MapIntoArray),
-        Box::new(MapToSet),
-        Box::new(MinMaxComparison),
-        Box::new(ModuleMemberExistenceCheck),
-        Box::new(MultilineInPatternThen),
-        Box::new(NegatedIfElseCondition),
-        Box::new(NegativeArrayIndex),
-        Box::new(NestedFileDirname),
-        Box::new(NumberedParametersLimit),
-        Box::new(SafeNavigationChainLength),
-        Box::new(YAMLFileRead),
-        Box::new(FileTouch),
-    ]
 }
