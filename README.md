@@ -1,3 +1,6 @@
+[![Docs](https://img.shields.io/badge/docs-mintlify-18a34a?style=flat-square)](https://mintlify.com/npow/oxicop)
+
+
 <p align="center">
   <b>oxicop</b>
 </p>
